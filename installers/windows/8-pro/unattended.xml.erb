@@ -66,7 +66,14 @@
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
       <UserAccounts>
         <AdministratorPassword>
-          <Value><%= node.root_password %></Value>
+          <Value><%= 
+require 'base64'
+
+# To match the behavior of CLI base64 and Windows SIM tool we
+# have to interleave each character with a NULL byte ("\x00").
+# Not sure why this is. -gavin_scott 20140212
+Base64.encode64(node.root_password.split(//).join("\x00")).strip
+%></Value>
           <PlainText>true</PlainText>
         </AdministratorPassword>
       </UserAccounts>
