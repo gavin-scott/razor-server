@@ -17,7 +17,13 @@ clearpart --firstdisk --overwritevmfs
 install --firstdisk --overwritevmfs
 # Set the network to DHCP on the first network adapater
 # @todo danielp 2013-10-11: this needs to support static mode too...
+
+<% if node.bootproto == 'static' -%>
+network --bootproto=static --device=vmnic0 --ip=<%= node.ip %> --netmask=<%= node.netmask %> --gateway=<%= node.gateway %>
+<% else -%>
 network --bootproto=dhcp --device=vmnic0
+<% end -%>
+
 reboot
 
 # %include /tmp/networkconfig
