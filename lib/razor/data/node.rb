@@ -127,6 +127,10 @@ module Razor::Data
       self.boot_count = 1
       self.root_password = policy.root_password
       self.hostname = policy.hostname_pattern.gsub(/\$\{\s*id\s*\}/, id.to_s)
+      self.bootproto = policy.bootproto
+      self.ip = policy.ip
+      self.netmask = policy.netmask
+      self.gateway = policy.gateway
     end
 
     # This is a hack around the fact that the auto_validates plugin does
