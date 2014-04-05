@@ -99,15 +99,16 @@ esxcli system syslog config logger set --id=vpxa --rotate=20
 # /sbin/chkconfig --level 345 ntpd on
 
 <% if static %>
-# Set the management network static IP address. This was already done
-# during the original boot (network line above) but we are seeing
-# intermittent cases where the management network comes up configured
-# correctly but non-responsive. Setting it here again in case that
-# helps...
+# Remove original management network
+esxcli network ip interface remove --interface-name vmk0
+esxcli network vswitch standard portgroup remove --portgroup-name "Management Network" --vswitch-name vSwitch0
 
+# Configure management network
+esxcli network vswitch standard portgroup add --portgroup-name "<%= mgmt_network['name'] %>" --vswitch-name vSwitch0
 <% if mgmt_network['vlanId'] %>
-esxcli network vswitch standard portgroup set --portgroup-name  "Management Network" --vlan-id <%= mgmt_network['vlanId'] %>
+esxcli network vswitch standard portgroup set --portgroup-name  "<%= mgmt_network['name'] %>" --vlan-id <%= mgmt_network['vlanId'] %>
 <% end %>
+esxcli network ip interface add --interface-name vmk0 --portgroup-name "<%= mgmt_network['name'] %>"
 esxcli network ip interface ipv4 set --interface-name vmk0 --type static --ipv4 <%= static['ip_address'] %> --netmask <%= static['subnet'] %>
 <% end %>
 
