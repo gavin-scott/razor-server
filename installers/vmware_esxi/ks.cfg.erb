@@ -1,3 +1,16 @@
+<%
+  require 'yaml'
+  require 'erb'
+  localdir = File.dirname(__FILE__)
+  node_options_file = File.join(localdir, "#{node.hostname}.yaml" )
+  if File.exists?(node_options_file)
+    options = YAML.load_file(
+      node_options_file
+    )
+  else
+    options = {}
+  end
+%>
 # Thanks to William Lam for being the guru
 accepteula
 rootpw --iscrypted <%=
@@ -18,14 +31,24 @@ install --firstdisk --overwritevmfs
 # Set the network to DHCP on the first network adapater
 # @todo danielp 2013-10-11: this needs to support static mode too...
 <%=
-dir = File.expand_path(File.dirname(__FILE__))
-inc_file = File.join(dir, "bootproto_#{node.facts['serialnumber']}.inc.erb")
-if File.exists?(inc_file)
-  content = File.read(inc_file)
-  t = ERB.new(content)
-  t.result(binding)
-else
+mgmt_network = options['hypervisor_network'] && options['hypervisor_network'].first
+static = mgmt_network && mgmt_network['staticNetworkConfiguration']
+
+if !static
   'network --bootproto=dhcp --device=vmnic0'
+else
+  content = "network --bootproto=static --device=vmnic0 --ip=#{static['ip_address']}  --netmask=#{static['subnet']} --gateway=#{static['gateway']} --hostname=\"#{node.hostname}\""
+  # NOTE: vlanId is a FixNum
+  if mgmt_network['vlanId']
+    content += " --vlanid=#{mgmt_network['vlanId']}"
+  end
+  nameservers = [ static['dns1'], static['dns2'] ].select { |x| !x.nil? && !x.empty? }
+  if nameservers.size > 0
+    content += " --nameserver=#{nameservers.join(',')}"
+  else
+    content += ' --nodns'
+  end
+  content
 end
 %>
 
