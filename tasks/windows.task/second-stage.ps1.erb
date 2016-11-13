@@ -26,8 +26,16 @@ write-host "starting installer ${installer}"
 dir ${installer}
 start-process "${installer}" -argumentlist "/unattend:${unattended} /noreboot" -wait
 
-write-host "notify Razor that the installer completed"
-(new-object System.Net.WebClient).DownloadString('<%= stage_done_url("finished") %>')
+# Determine Windows installation drive
+Write-Host "Determining drive letter for Windows installation"
+$osDrive = (bcdedit /enum OSLOADER | Select-String osdevice)[0].ToString().Split('=')[-1]
+Write-Host "Drive letter for installation is $($osDrive)"
+
+Write-Host "registering setup script to run after reboot before login screen"
+New-Item -ItemType Directory -Force -Path "$($osDrive)\Windows\Setup\Scripts"
+# The $osDrive drive is the freshly installed but not-yet-booted operating system.
+
+(New-Object System.Net.WebClient).DownloadFile('<%= file_url('SetupComplete.cmd') %>',"$($osDrive)\Windows\Setup\Scripts\SetupComplete.cmd")
 
 write-host "restarting the system to complete installation"
 restart-computer

@@ -1,0 +1,2 @@
+;; Notify razor that the install is complete
+powershell.exe -executionpolicy bypass -command "(new-object System.Net.WebClient).DownloadString('<%= stage_done_url("finished") %>')"
