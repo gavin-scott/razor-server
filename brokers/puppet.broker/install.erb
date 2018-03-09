@@ -68,9 +68,11 @@ case "${flavour}" in
 
         # No need to update package lists for yum, and rpm will fetch the pkg
         # for us, which is convenient.
-        rpm -q puppetlabs-release || \
-            rpm -ihv "${url}"     || \
-            fail "unable to install the EL repository data file"
+        if [ ! -f /etc/yum.repos.d/puppet-internal.repo ]; then
+            rpm -q puppetlabs-release || \
+                rpm -ihv "${url}"     || \
+                fail "unable to install the EL repository data file"
+        fi
 
         # Install Puppet
         yum -y install puppet-agent
@@ -120,15 +122,20 @@ esac
 
 
 <% unless broker.empty? %>
-# Now, configuration.  Much as I love the idea of editing an ini file with
-# basic Unix tools like sed and awk, this seems much less worse, even if it
-# puts a puppet module you might not expect into place on disk.
-/opt/puppetlabs/bin/puppet module install puppetlabs/inifile
-
-# Update the ini file with the resource tool.
-<% broker.each do |setting, value| %>
-/opt/puppetlabs/bin/puppet resource ini_setting ensure=present path=/etc/puppetlabs/puppet/puppet.conf section=main setting=<%= setting.shellescape %> value=<%= value.shellescape %>
-<% end %>
+#update puppet.conf file
+cat > /etc/puppetlabs/puppet/puppet.conf << EOF
+[main]
+server = <%= broker[:server] %>
+logdir = /var/log/puppet
+rundir = /var/run/puppet
+ssldir = \$vardir/ssl
+configtimeout = 600
+runinterval = 5m
+[agent]
+classfile   = \$vardir/classes.txt
+localconfig = \$vardir/localconfig
+certname    = <%= node.policy.node_metadata["installer_options"]["agent_certname"] %>
+EOF
 <% end %>
 
 # For debugging, just in case, dump out the modified confirmation file.
