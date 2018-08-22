@@ -40,12 +40,13 @@ yum-config-manager --disable updates
 yum-config-manager --disable extras
 
 # Add base repo from iso
+# TODO: figure out how to handle rhel _or_ centos
 cat > /etc/yum.repos.d/razor-internal.repo << EOF
 [razor-internal]
 name=Internal Razor OS Repository
 baseurl=<%= iso_repo_url %>
 gpgcheck=1
-gpgkey=<%= iso_repo_url %>/RPM-GPG-KEY-CentOS-\$releasever
+gpgkey=<%= iso_repo_url %>/RPM-GPG-KEY-redhat-release
 enabled=True
 EOF
 
