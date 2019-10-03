@@ -33,6 +33,12 @@ iso_repo_url = parsed.to_s
 # add the dellasm host entry to /etc/hosts
 echo "<%= razor_ip %> dellasm" >> /etc/hosts
 
+# TODO: populate this with parsing /etc/os-release or something
+OS_INFO=$(cat /etc/redhat-release  | sed -e 's/\([^ ]*\)[^0-9]*\([0-9]*\)[.]\([0-9]*\).*/\1-\2-\3/')
+DISTRIBUTION=$(echo $OS_INFO | cut -f1 -d-)
+MAJOR_VERSION=$(echo $OS_INFO | cut -f2 -d-)
+MINOR_VERSION=$(echo $OS_INFO | cut -f3 -d-)
+
 <%
 # Grab the options hash to get the RCM repos
 options = node.policy.node_metadata["installer_options"] || {}
@@ -50,6 +56,11 @@ yum_repos.each do |repo|
   base_url_path = [vxos_repo["baseUrl"], repo["base_path"]].reject {|e| e.nil? || e.empty?}.join("/")
 %>
 
+<%= if repo["distribution"] %>
+if [ $DISTRIBUTION == "<%= repo["distribution"] %>" &&
+  $MAJOR_VERSION == "<%= repo["distribution_major_version"] %>" &&
+  $MINOR_VERSION == "<%= repo["distribution_minor_version"] %>" ]; then
+<% end %>
 cat > /etc/yum.repos.d/<%= name %>.repo << EOF
 [<%= name %>]
 name=<%= repo["description"] %>
@@ -59,6 +70,10 @@ gpgcheck=<%= gpg_check %>
 gpgkey=<%= "%s/%s" % [base_url_path, repo["gpg_key"]] %>
 <% end %>
 EOF
+
+<%= if repo["distribution"] %>
+fi
+<%= end %>
 <%
 end %>
 
